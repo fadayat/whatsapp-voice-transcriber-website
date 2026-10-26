@@ -1,448 +1,298 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Voice Note Transcriber — Privacy-First WhatsApp Voice-to-Text</title>
-  <meta name="description" content="Open-source browser extension that transcribes WhatsApp Web voice notes on demand with silent in-memory audio capture, zero data retention, and OS keyring storage.">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voice Note Transcriber — 3D Audio Experience</title>
+  <meta name="description" content="Open-source browser extension that transcribes WhatsApp Web voice notes on demand with silent audio capture, zero data retention, and 3D WebGL soundwaves.">
+  <meta name="theme-color" content="#080b10">
+  <link rel="canonical" href="https://whatsapp-voice-transcriber-website.vercel.app/">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300a884' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z'></path><path d='M19 10v2a7 7 0 0 1-14 0v-2'></path><line x1='12' x2='12' y1='19' y2='22'></line></svg>">
+
+  <!-- Fonts: Manrope & DM Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <meta property="og:title" content="Voice Note Transcriber for WhatsApp Web">
-  <meta property="og:description" content="Read WhatsApp Web voice notes with Groq Whisper Large v3 without playing audio out loud. Zero data retention.">
-  <meta property="og:type" content="website">
+
+  <!-- Three.js from Cloudflare CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <!-- Navigation -->
-  <header class="site-header">
-    <div class="container header-container">
-      <a href="#" class="brand">
-        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-          <line x1="12" x2="12" y1="19" y2="22"></line>
-        </svg>
+  <!-- 3D WebGL Background Canvas -->
+  <canvas id="webgl-canvas" class="webgl-bg" aria-hidden="true"></canvas>
+
+  <!-- Ambient Background Overlay -->
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <!-- Primary Navigation -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="#top" class="brand" aria-label="Voice Note Transcriber Home">
+        <span class="brand-orb" aria-hidden="true"></span>
         <span class="brand-name">Voice Note Transcriber</span>
+        <span class="badge-tag">3D Experience</span>
       </a>
 
-      <nav class="nav-links" aria-label="Main Navigation">
-        <a href="#overview" data-i18n="nav.overview">Overview</a>
-        <a href="#simulator" data-i18n="nav.simulator">Live Simulator</a>
-        <a href="#architecture" data-i18n="nav.architecture">Architecture</a>
-        <a href="#installation" data-i18n="nav.installation">Installation</a>
-        <a href="#audit" data-i18n="nav.audit">Security Audit</a>
-      </nav>
-
-      <div class="header-actions">
-        <!-- Language Switcher -->
-        <button id="lang-toggle" class="btn-ghost" aria-label="Switch language">
-          <span id="lang-label">AZ</span>
-        </button>
-
-        <!-- Theme Toggle -->
-        <button id="theme-toggle" class="btn-ghost" aria-label="Switch theme">
-          <svg class="icon-theme-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"></circle>
-            <path d="M12 2v2"></path>
-            <path d="M12 20v2"></path>
-            <path d="m4.93 4.93 1.41 1.41"></path>
-            <path d="m17.66 17.66 1.41 1.41"></path>
-            <path d="M2 12h2"></path>
-            <path d="M20 12h2"></path>
-            <path d="m6.34 17.66-1.41 1.41"></path>
-            <path d="m19.07 4.93-1.41 1.41"></path>
+      <div class="nav-links">
+        <a href="#demo">3D Stage</a>
+        <a href="#architecture">Pillars</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/fadayat/whatsapp-voice-transcriber" class="nav-github-btn" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M12 .5a12 12 0 0 0-3.79 23.4c.6.1.82-.26.82-.58v-2.1c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 6.43c1.02 0 2.04.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.6-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.18c0 .32.22.69.83.58A12 12 0 0 0 12 .5Z"/>
           </svg>
-          <svg class="icon-theme-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-          </svg>
-        </button>
-
-        <!-- GitHub Primary Link -->
-        <a href="https://github.com/fadayat/whatsapp-voice-transcriber" target="_blank" rel="noopener noreferrer" class="btn-github">
-          <svg class="icon-github" viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
-          </svg>
-          <span>Repository</span>
-          <span class="version-tag">v0.2.0</span>
+          GitHub
         </a>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main>
+  <main id="main">
     <!-- Hero Section -->
-    <section id="overview" class="hero">
-      <div class="container hero-layout">
-        <div class="hero-content">
-          <div class="hero-status">
-            <span class="status-dot"></span>
-            <span data-i18n="hero.status">Brave & Chromium Extension • Zero Data Retention</span>
-          </div>
+    <section class="hero" id="top">
+      <div class="hero-badge-pill">
+        <span>Interactive 3D WebGL Audio Wavefield</span>
+      </div>
 
-          <h1 class="hero-heading" data-i18n="hero.heading">
-            On-demand transcription for WhatsApp Web voice notes
-          </h1>
+      <h1 class="hero-title">
+        Read voice notes.<br>
+        <span class="gradient-text">Without playing them aloud.</span>
+      </h1>
 
-          <p class="hero-description" data-i18n="hero.description">
-            Converts selected incoming voice messages to text without audio playback leaks, background conversation scraping, or credential exposure. Powered by Groq Whisper Large v3 and native operating system keyrings.
-          </p>
+      <p class="hero-desc">
+        A privacy-conscious browser extension that adds instant, on-demand transcription to WhatsApp Web. Silent in-memory capture, zero audio leakage, and account-level Zero Data Retention powered by Groq Whisper Large v3.
+      </p>
 
-          <div class="hero-actions">
-            <a href="https://github.com/fadayat/whatsapp-voice-transcriber" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
-              </svg>
-              <span data-i18n="hero.ctaCode">View Source & Setup</span>
-            </a>
-            <a href="#simulator" class="btn btn-secondary">
-              <span data-i18n="hero.ctaSimulator">Launch Simulator</span>
-            </a>
-          </div>
+      <div class="hero-buttons">
+        <a href="#install" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 20h14"/></svg>
+          Install Extension
+        </a>
+        <a href="#demo" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Test 3D Simulator
+        </a>
+      </div>
 
-          <div class="technical-specs">
-            <div class="spec-node">
-              <span class="spec-label" data-i18n="specs.engine">Engine</span>
-              <span class="spec-value">Whisper Large v3</span>
-            </div>
-            <div class="spec-node">
-              <span class="spec-label" data-i18n="specs.latency">Inference</span>
-              <span class="spec-value">~1.2s round-trip</span>
-            </div>
-            <div class="spec-node">
-              <span class="spec-label" data-i18n="specs.capture">Audio Hook</span>
-              <span class="spec-value">Silenced in-memory blob</span>
-            </div>
-            <div class="spec-node">
-              <span class="spec-label" data-i18n="specs.secrets">Secrets</span>
-              <span class="spec-value">OS Keyring (libsecret)</span>
-            </div>
-          </div>
+      <div class="hero-specs-row">
+        <div class="spec-chip">
+          <span class="spec-dot"></span>
+          <span>100% Silent Hook</span>
         </div>
-
-        <!-- Simulator Section: Embedded WhatsApp Container -->
-        <div id="simulator" class="simulator-wrapper">
-          <div class="device-frame">
-            <div class="wa-app-bar">
-              <div class="wa-contact-block">
-                <div class="wa-avatar-symbol" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </div>
-                <div class="wa-contact-meta">
-                  <div class="wa-title">Core Architecture Review</div>
-                  <div class="wa-subtitle" data-i18n="sim.subtitle">WhatsApp Web session</div>
-                </div>
-              </div>
-              <div class="wa-tools" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" x2="16.65" y1="21" y2="16.65"></line>
-                </svg>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="1"></circle>
-                  <circle cx="12" cy="5" r="1"></circle>
-                  <circle cx="12" cy="19" r="1"></circle>
-                </svg>
-              </div>
-            </div>
-
-            <div class="wa-messages-viewport">
-              <div class="wa-system-pill">
-                <span data-i18n="sim.pill">Messages are end-to-end encrypted</span>
-              </div>
-
-              <!-- Message 1: Incoming Context -->
-              <div class="wa-bubble-row wa-incoming-row">
-                <div class="wa-message-bubble">
-                  <div class="wa-author">Teymur (Security)</div>
-                  <div class="wa-text-content" data-i18n="sim.msg1">
-                    The audit confirmed that Groq Zero Data Retention is active. Can you confirm the audio capture hook never plays out loud?
-                  </div>
-                  <div class="wa-meta-time">14:24</div>
-                </div>
-              </div>
-
-              <!-- Message 2: WhatsApp Voice Note with Native Injected Transcribe Button -->
-              <div class="wa-bubble-row wa-incoming-row">
-                <div class="wa-message-bubble wa-voice-bubble" id="demo-voice-bubble">
-                  <div class="wa-author">Leyla (Core Engine)</div>
-                  
-                  <div class="wa-player-row">
-                    <button id="sim-play-btn" class="wa-audio-control" aria-label="Play sample voice message">
-                      <svg id="sim-icon-play" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                      </svg>
-                      <svg id="sim-icon-pause" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display:none;">
-                        <rect x="6" y="4" width="4" height="16"></rect>
-                        <rect x="14" y="4" width="4" height="16"></rect>
-                      </svg>
-                    </button>
-
-                    <div class="wa-waveform-canvas" id="sim-waveform" aria-hidden="true">
-                      <span class="wf-bar past" style="height:35%"></span>
-                      <span class="wf-bar past" style="height:60%"></span>
-                      <span class="wf-bar past" style="height:85%"></span>
-                      <span class="wf-bar past" style="height:45%"></span>
-                      <span class="wf-bar" style="height:70%"></span>
-                      <span class="wf-bar" style="height:95%"></span>
-                      <span class="wf-bar" style="height:60%"></span>
-                      <span class="wf-bar" style="height:80%"></span>
-                      <span class="wf-bar" style="height:40%"></span>
-                      <span class="wf-bar" style="height:90%"></span>
-                      <span class="wf-bar" style="height:55%"></span>
-                      <span class="wf-bar" style="height:75%"></span>
-                      <span class="wf-bar" style="height:30%"></span>
-                    </div>
-
-                    <div class="wa-playback-time">0:14</div>
-                  </div>
-
-                  <!-- Injected Extension Boundary -->
-                  <div class="wa-extension-injection">
-                    <button id="sim-trigger-btn" class="wa-btn-transcribe">
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                      </svg>
-                      <span id="sim-trigger-label" data-i18n="sim.btnLabel">Transkript</span>
-                    </button>
-
-                    <!-- Inset Transcript Result Box (Hidden by default) -->
-                    <div id="sim-transcript-panel" class="wa-transcript-drawer" style="display:none;">
-                      <div class="wa-transcript-bar">
-                        <span class="wa-engine-tag" data-i18n="sim.engineTag">Whisper Large v3</span>
-                        <div class="wa-actions-group">
-                          <button id="sim-btn-refresh" class="wa-action-link" data-i18n="sim.actionRefresh">Yenilə</button>
-                          <button id="sim-btn-copy" class="wa-action-link" data-i18n="sim.actionCopy">Kopyala</button>
-                        </div>
-                      </div>
-                      <div id="sim-transcript-text" class="wa-transcript-content" data-i18n="sim.transcribedText">
-                        "Tam doğrudur. Detached Audio hook-u media mənbəyini oxumamışdan əvvəl audionu səssizləşdirir, native play() çağırılmır və mesaj dərhal sıfır saniyəyə qaytarılır. Heç bir səs baytı otağa yayılmır."
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="wa-meta-time">14:25</div>
-                </div>
-              </div>
-
-              <!-- Message 3: Outgoing Confirmation -->
-              <div class="wa-bubble-row wa-outgoing-row">
-                <div class="wa-message-bubble">
-                  <div class="wa-text-content" data-i18n="sim.msgOut">
-                    Mükəmməl. Transkript birbaşa mesaj bubble-ı daxilində oxundu, saat göstəricisi ilə də toqquşmur.
-                  </div>
-                  <div class="wa-meta-time">
-                    14:26
-                    <svg class="wa-tick-icon" viewBox="0 0 16 11" width="14" height="10" fill="currentColor">
-                      <path d="M11.07 0.93a1 1 0 0 0-1.41 0l-5.66 5.66-2.12-2.12a1 1 0 1 0-1.41 1.41l2.83 2.83a1 1 0 0 0 1.41 0l6.36-6.36a1 1 0 0 0 0-1.42z"></path>
-                      <path d="M15.07 0.93a1 1 0 0 0-1.41 0l-5.66 5.66 0.71 0.71 4.95-4.95a1 1 0 0 0 0-1.42z"></path>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="wa-panel-caption">
-              <span data-i18n="sim.caption">Click the "Transkript" button inside the message bubble above to trigger the simulated flow.</span>
-            </div>
-          </div>
+        <div class="spec-chip">
+          <span class="spec-dot"></span>
+          <span>Zero Data Retention</span>
+        </div>
+        <div class="spec-chip">
+          <span class="spec-dot"></span>
+          <span>OS Keyring Storage</span>
+        </div>
+        <div class="spec-chip">
+          <span class="spec-dot"></span>
+          <span>Whisper Large v3</span>
         </div>
       </div>
     </section>
 
-    <!-- Technical Architecture Section -->
-    <section id="architecture" class="section">
-      <div class="container">
-        <h2 class="section-title" data-i18n="arch.title">Security & Technical Architecture</h2>
-        <p class="section-subtitle" data-i18n="arch.subtitle">
-          Designed specifically to prevent WhatsApp Web chat scraping, audio eavesdropping, and plain-text credential leaks.
-        </p>
+    <!-- 3D Interactive Audio Stage -->
+    <section class="interactive-stage" id="demo">
+      <div class="stage-header">
+        <h2>Interactive 3D Audio Transformation</h2>
+        <p>Move your cursor to navigate the 3D particle soundwave. Click <strong>Transcribe</strong> to watch the wave collapse into text in real time.</p>
+      </div>
 
-        <div class="arch-flow-grid">
-          <div class="arch-cell">
-            <div class="arch-step-num">01</div>
-            <h3 class="arch-cell-title" data-i18n="arch.c1Title">MAIN-World Detached Audio Hook</h3>
-            <p class="arch-cell-desc" data-i18n="arch.c1Desc">
-              WhatsApp Web isolates decrypted voice streams in headless JavaScript <code>Audio</code> instances rather than DOM audio tags. The extension intercepts the in-memory <code>blob:</code> URL at document start, sets media volume to zero, and resets position before dispatch.
-            </p>
+      <!-- 3D Stage Window Frame -->
+      <div class="stage-window-frame" id="stageCard">
+        <div class="stage-window-bar">
+          <div class="window-dots">
+            <span class="w-dot red"></span>
+            <span class="w-dot yellow"></span>
+            <span class="w-dot green"></span>
           </div>
+          <span class="window-title">web.whatsapp.com — Voice Note Transcriber</span>
+          <span class="window-mode-tag">GPU Accelerated · 60 FPS</span>
+        </div>
 
-          <div class="arch-cell">
-            <div class="arch-step-num">02</div>
-            <h3 class="arch-cell-title" data-i18n="arch.c2Title">Loopback-Only Node.js Helper</h3>
-            <p class="arch-cell-desc" data-i18n="arch.c2Desc">
-              Third-party API credentials never touch browser storage or extension content scripts. Audio arrays pass through <code>127.0.0.1:4318</code> over a restricted loopback origin with strictly validated Opus/OGG headers.
-            </p>
-          </div>
+        <div class="stage-viewport">
+          <!-- Voice Message Row (Flat direct bubble) -->
+          <div class="wa-message-zone">
+            <div class="bubble-header-line">
+              <span class="author-tag">Engineering Voice Note</span>
+              <span class="time-stamp">14:48</span>
+            </div>
 
-          <div class="arch-cell">
-            <div class="arch-step-num">03</div>
-            <h3 class="arch-cell-title" data-i18n="arch.c3Title">Native OS Secret Storage</h3>
-            <p class="arch-cell-desc" data-i18n="arch.c3Desc">
-              When persistent authentication is enabled, the Groq API key is written directly to the operating system credential vault (GNOME Keyring on Linux, macOS Keychain, or Windows Credential Manager) with filesystem mode <code>0600</code>.
-            </p>
-          </div>
+            <!-- Audio Player Row -->
+            <div class="player-flex-row">
+              <button id="stageAudioBtn" class="audio-toggle-btn" aria-label="Toggle audio wave simulation">
+                <svg id="stagePlayIcon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <svg id="stagePauseIcon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display:none;">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+              </button>
 
-          <div class="arch-cell">
-            <div class="arch-step-num">04</div>
-            <h3 class="arch-cell-title" data-i18n="arch.c4Title">Account-Level Zero Data Retention</h3>
-            <p class="arch-cell-desc" data-i18n="arch.c4Desc">
-              Inference uses Groq's Speech-to-Text endpoint under configured Zero Data Retention. Neither audio bytes nor textual output are stored on disk, logged in server output, or cached in cloud databases.
-            </p>
+              <div class="mini-waveform" id="miniWaveform" aria-hidden="true">
+                <span class="m-bar" style="--scale: 0.35"></span>
+                <span class="m-bar" style="--scale: 0.60"></span>
+                <span class="m-bar" style="--scale: 0.90"></span>
+                <span class="m-bar" style="--scale: 0.45"></span>
+                <span class="m-bar" style="--scale: 0.75"></span>
+                <span class="m-bar" style="--scale: 1.00"></span>
+                <span class="m-bar" style="--scale: 0.55"></span>
+                <span class="m-bar" style="--scale: 0.85"></span>
+                <span class="m-bar" style="--scale: 0.40"></span>
+                <span class="m-bar" style="--scale: 0.90"></span>
+                <span class="m-bar" style="--scale: 0.65"></span>
+                <span class="m-bar" style="--scale: 0.75"></span>
+                <span class="m-bar" style="--scale: 0.35"></span>
+              </div>
+
+              <span class="time-counter">0:14</span>
+            </div>
+
+            <!-- Extension Button Trigger -->
+            <div class="transcribe-dock">
+              <button id="stageTranscribeBtn" class="transcribe-glass-btn">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <span id="transcribeLabel">Transcribe</span>
+              </button>
+
+              <!-- Inset Transcript Disclosure Area -->
+              <div id="transcriptPanel" class="result-inset-panel" style="display:none;">
+                <div class="panel-top-bar">
+                  <span class="model-badge">Groq Whisper Large v3</span>
+                  <div class="panel-actions">
+                    <button id="btnRefresh" class="action-btn">Re-run</button>
+                    <button id="btnCopy" class="action-btn">Copy Text</button>
+                  </div>
+                </div>
+                <div class="panel-body-text" id="panelOutput">
+                  "All privacy and security audits passed. Media streams are silenced before audio buffering begins, and Zero Data Retention is enforced. Ready for public use."
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div class="stage-footer-bar">
+          <button id="trigger3dBtn" class="stage-action-trigger">
+            <span>Trigger 3D Audio Harmonic Spike</span>
+          </button>
+          <span class="stage-status-label" id="stageStatus">Move cursor to orbit 3D soundfield</span>
         </div>
       </div>
     </section>
 
-    <!-- Installation & Setup Walkthrough -->
-    <section id="installation" class="section section-alt">
-      <div class="container">
-        <h2 class="section-title" data-i18n="setup.title">Setup & Deployment</h2>
-        <p class="section-subtitle" data-i18n="setup.subtitle">
-          Three steps to run the helper daemon and install the unpacked extension in Brave or Chrome.
-        </p>
+    <!-- Technical Architecture Grid -->
+    <section class="section-container" id="architecture">
+      <div class="section-intro">
+        <h2>Engineering & Privacy Pillars</h2>
+        <p>Built from the ground up to prevent data leaks, eliminate speaker sound, and maintain local device sovereignty.</p>
+      </div>
 
-        <div class="setup-columns">
-          <div class="setup-pane">
-            <h3 class="setup-pane-title" data-i18n="setup.step1Header">1. Start Local Helper Daemon</h3>
-            <p class="setup-pane-desc" data-i18n="setup.step1Text">
-              Clone the open-source repository and start the local helper server. It binds strictly to <code>127.0.0.1:4318</code>.
-            </p>
-            <div class="terminal-shell">
-              <div class="terminal-header">
-                <span class="term-dot"></span>
-                <span class="term-dot"></span>
-                <span class="term-dot"></span>
-                <span class="term-title">bash</span>
-              </div>
-              <pre class="terminal-body"><code>git clone https://github.com/fadayat/whatsapp-voice-transcriber.git
+      <div class="pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-header">
+            <svg class="header-icon mint" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 5 6 9H2v6h4l5 4V5Z"></path>
+              <line x1="23" y1="9" x2="17" y2="15"></line>
+              <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+            <h3>Silent In-Memory Hook</h3>
+          </div>
+          <p>WhatsApp Web creates detached, headless <code>Audio</code> objects for decrypted voice messages. The extension captures the blob URL in memory, mutes volume to 0%, and resets position to avoid speaker playback.</p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-header">
+            <svg class="header-icon cyan" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <h3>Account-Level Zero Retention</h3>
+          </div>
+          <p>Sends verified audio payloads directly to Groq Speech-to-Text running Whisper Large v3. Neither audio bytes nor textual transcripts are ever saved to disk or retained by cloud servers.</p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-header">
+            <svg class="header-icon violet" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h3>OS Keyring Encryption</h3>
+          </div>
+          <p>Your Groq API key is stored locally in your operating system's native credential vault (GNOME Keyring, macOS Keychain, or Windows Credential Manager). It never touches browser storage.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Installation Section (Flat Timeline Sequence) -->
+    <section class="section-container" id="install">
+      <div class="section-intro">
+        <h2>Quick Installation</h2>
+        <p>Set up the local helper daemon and install the unpacked extension in Brave or Chrome.</p>
+      </div>
+
+      <div class="install-timeline">
+        <div class="timeline-step">
+          <div class="step-num">01</div>
+          <div class="step-info">
+            <h3>Start Local Loopback Server</h3>
+            <p>Clone the repository and launch the Node.js helper (runs strictly on <code>127.0.0.1:4318</code>):</p>
+            <div class="terminal-container">
+              <pre><code>git clone https://github.com/fadayat/whatsapp-voice-transcriber.git
 cd whatsapp-voice-transcriber
 npm install
 npm start</code></pre>
-              <button class="terminal-copy-btn" data-copy="git clone https://github.com/fadayat/whatsapp-voice-transcriber.git && cd whatsapp-voice-transcriber && npm install && npm start" aria-label="Copy terminal commands">Copy</button>
+              <button class="copy-cmd-btn" data-copy="git clone https://github.com/fadayat/whatsapp-voice-transcriber.git && cd whatsapp-voice-transcriber && npm install && npm start" type="button">Copy</button>
             </div>
           </div>
+        </div>
 
-          <div class="setup-pane">
-            <h3 class="setup-pane-title" data-i18n="setup.step2Header">2. Load Extension in Browser</h3>
-            <p class="setup-pane-desc" data-i18n="setup.step2Text">
-              Open your browser extension manager and enable Developer Mode:
-            </p>
-            <ol class="step-list">
-              <li>Navigate to <code class="code-inline">brave://extensions</code> or <code class="code-inline">chrome://extensions</code></li>
-              <li>Toggle <strong>Developer mode</strong> in the upper right corner</li>
-              <li>Click <strong>Load unpacked</strong> and select the repository's <code class="code-inline">extension/</code> directory</li>
-            </ol>
-          </div>
-
-          <div class="setup-pane">
-            <h3 class="setup-pane-title" data-i18n="setup.step3Header">3. Authorize via Local Setup Page</h3>
-            <p class="setup-pane-desc" data-i18n="setup.step3Text">
-              Navigate to <a href="http://127.0.0.1:4318/setup" target="_blank" rel="noopener" class="text-link">http://127.0.0.1:4318/setup</a> in your browser. Enter your Groq API key once. The helper verifies authentication against Groq and stores the credential in your system vault.
-            </p>
+        <div class="timeline-step">
+          <div class="step-num">02</div>
+          <div class="step-info">
+            <h3>Load Extension in Browser</h3>
+            <p>Go to <code>brave://extensions</code> or <code>chrome://extensions</code>, enable <strong>Developer mode</strong>, click <strong>Load unpacked</strong>, and select the <code>extension/</code> folder.</p>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Security Audit Matrix -->
-    <section id="audit" class="section">
-      <div class="container">
-        <h2 class="section-title" data-i18n="audit.title">Data Privacy Matrix</h2>
-        <p class="section-subtitle" data-i18n="audit.subtitle">
-          Comparing the architectural guarantees of Voice Note Transcriber against conventional transcription methods.
-        </p>
-
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th scope="col">Evaluation Vector</th>
-                <th scope="col" class="th-primary">Voice Note Transcriber</th>
-                <th scope="col">Third-Party Bot / Forwarder</th>
-                <th scope="col">General Tab Audio Recorder</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Audio Data Lifecycle</td>
-                <td class="td-primary">In-memory buffer only; purged on dispatch</td>
-                <td>Stored on external third-party server</td>
-                <td>Written to persistent local disk files</td>
-              </tr>
-              <tr>
-                <td>Room Audio Emission</td>
-                <td class="td-primary">Zero leak; media playback channel silenced</td>
-                <td>Requires message forwarding</td>
-                <td>Must play aloud through speakers</td>
-              </tr>
-              <tr>
-                <td>Credential Security</td>
-                <td class="td-primary">Protected in OS Keyring (0600 mode)</td>
-                <td>Stored in third-party cloud infrastructure</td>
-                <td>Plaintext config files or web storage</td>
-              </tr>
-              <tr>
-                <td>Conversation Scope</td>
-                <td class="td-primary">Selective; triggered solely on user button press</td>
-                <td>Exposes entire chat thread</td>
-                <td>Captures all ambient tab noise</td>
-              </tr>
-              <tr>
-                <td>Source Availability</td>
-                <td class="td-primary">100% Open Source (MIT License)</td>
-                <td>Proprietary / Closed source</td>
-                <td>Mixed / Often closed source</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="timeline-step">
+          <div class="step-num">03</div>
+          <div class="step-info">
+            <h3>Save API Key in OS Vault</h3>
+            <p>Visit <a href="http://127.0.0.1:4318/setup" target="_blank" rel="noopener" class="highlight-link">http://127.0.0.1:4318/setup</a> in your browser. Enter your Groq API key to store it securely in your system keyring.</p>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Site Footer -->
-  <footer class="site-footer">
-    <div class="container footer-content">
-      <div class="footer-primary">
-        <div class="brand">
-          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" x2="12" y1="19" y2="22"></line>
-          </svg>
-          <span class="brand-name">Voice Note Transcriber</span>
-        </div>
-        <p class="footer-legal-desc" data-i18n="footer.legal">
-          Independent open-source project. Not affiliated with, authorized, or endorsed by WhatsApp, Meta Platforms, Inc., Brave Software, or Groq, Inc.
-        </p>
+  <!-- Sleek Footer -->
+  <footer class="footer">
+    <div class="footer-wrap">
+      <div class="footer-meta">
+        <span class="brand-name">Voice Note Transcriber</span>
+        <p>Open-source, privacy-first audio transcription for WhatsApp Web.</p>
       </div>
-
-      <div class="footer-links-grid">
-        <div class="footer-col">
-          <div class="footer-heading">Documentation</div>
-          <a href="https://github.com/fadayat/whatsapp-voice-transcriber/blob/main/README.md" target="_blank" rel="noopener">README.md</a>
-          <a href="https://github.com/fadayat/whatsapp-voice-transcriber/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a>
-          <a href="https://github.com/fadayat/whatsapp-voice-transcriber/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
-        </div>
-        <div class="footer-col">
-          <div class="footer-heading">Security</div>
-          <a href="https://github.com/fadayat/whatsapp-voice-transcriber/blob/main/SECURITY.md" target="_blank" rel="noopener">Security Policy</a>
-          <a href="https://github.com/fadayat/whatsapp-voice-transcriber/blob/main/docs/PRIVACY_AND_RELEASE.md" target="_blank" rel="noopener">Privacy Architecture</a>
-          <a href="https://groq.com/docs/speech-to-text" target="_blank" rel="noopener">Groq Speech API</a>
-        </div>
+      <div class="footer-links">
+        <a href="https://github.com/fadayat/whatsapp-voice-transcriber" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/fadayat/whatsapp-voice-transcriber/blob/main/README.md" target="_blank" rel="noopener">Documentation</a>
+        <a href="https://github.com/fadayat/whatsapp-voice-transcriber/blob/main/SECURITY.md" target="_blank" rel="noopener">Security Policy</a>
+        <a href="https://github.com/fadayat/whatsapp-voice-transcriber/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
       </div>
     </div>
-
-    <div class="container footer-sub">
-      <div>© 2026 Fadayat Shamilov. Released under the MIT License.</div>
-      <div>Designed with precision and zero tracking.</div>
+    <div class="footer-sub-bar">
+      <span>© 2026 Fadayat Shamilov. Built with Three.js & WebGL.</span>
+      <span>Independent project. Not affiliated with WhatsApp LLC or Groq, Inc.</span>
     </div>
   </footer>
 

@@ -1,271 +1,339 @@
-// Voice Note Transcriber — Client Interaction & Localization
+// Voice Note Transcriber — 3D WebGL Audio Wave & Interactive System
 document.addEventListener('DOMContentLoaded', () => {
-  // --- 1. Localization Dictionary (Zero Emoji, Natural Professional Tone) ---
-  const translations = {
-    en: {
-      'nav.overview': 'Overview',
-      'nav.simulator': 'Live Simulator',
-      'nav.architecture': 'Architecture',
-      'nav.installation': 'Installation',
-      'nav.audit': 'Security Audit',
+  // --- 1. Three.js WebGL 3D Particle Audio Wavefield ---
+  const canvas = document.getElementById('webgl-canvas');
+  let scene, camera, renderer, particles, geometry, material;
+  let countX = 65, countZ = 65;
+  let numParticles = countX * countZ;
+  let positions, colors, initialY;
+  let clock = new THREE.Clock();
 
-      'hero.status': 'Brave & Chromium Extension • Zero Data Retention',
-      'hero.heading': 'On-demand transcription for WhatsApp Web voice notes',
-      'hero.description': 'Converts selected incoming voice messages to text without audio playback leaks, background conversation scraping, or credential exposure. Powered by Groq Whisper Large v3 and native operating system keyrings.',
-      'hero.ctaCode': 'View Source & Setup',
-      'hero.ctaSimulator': 'Launch Simulator',
+  let mouseX = 0, mouseY = 0;
+  let targetMouseX = 0, targetMouseY = 0;
+  let windowHalfX = window.innerWidth / 2;
+  let windowHalfY = window.innerHeight / 2;
 
-      'specs.engine': 'Engine',
-      'specs.latency': 'Inference',
-      'specs.capture': 'Audio Hook',
-      'specs.secrets': 'Secrets',
+  // Audio-reactive state simulation
+  let audioIntensity = 1.0;
+  let targetIntensity = 1.0;
+  let isConverged = false;
 
-      'sim.subtitle': 'WhatsApp Web session',
-      'sim.pill': 'Messages are end-to-end encrypted',
-      'sim.msg1': 'The audit confirmed that Groq Zero Data Retention is active. Can you confirm the audio capture hook never plays out loud?',
-      'sim.btnLabel': 'Transcribe',
-      'sim.engineTag': 'Whisper Large v3',
-      'sim.actionRefresh': 'Refresh',
-      'sim.actionCopy': 'Copy',
-      'sim.transcribedText': '"Exactly right. The detached Audio hook mutes the media channel before source resolution, suppresses native play(), and leaves the message paused at time zero. Zero audio bytes leak into the room."',
-      'sim.msgOut': 'Excellent. The transcript renders directly inside the message bubble and avoids clock overlap.',
-      'sim.caption': 'Click the "Transcribe" button inside the message bubble above to trigger the simulated flow.',
+  function initThree() {
+    if (!window.THREE || !canvas) return;
 
-      'arch.title': 'Security & Technical Architecture',
-      'arch.subtitle': 'Designed specifically to prevent WhatsApp Web chat scraping, audio eavesdropping, and plain-text credential leaks.',
-      'arch.c1Title': 'MAIN-World Detached Audio Hook',
-      'arch.c1Desc': 'WhatsApp Web isolates decrypted voice streams in headless JavaScript Audio instances rather than DOM audio tags. The extension intercepts the in-memory blob: URL at document start, sets media volume to zero, and resets position before dispatch.',
-      'arch.c2Title': 'Loopback-Only Node.js Helper',
-      'arch.c2Desc': 'Third-party API credentials never touch browser storage or extension content scripts. Audio arrays pass through 127.0.0.1:4318 over a restricted loopback origin with strictly validated Opus/OGG headers.',
-      'arch.c3Title': 'Native OS Secret Storage',
-      'arch.c3Desc': 'When persistent authentication is enabled, the Groq API key is written directly to the operating system credential vault (GNOME Keyring on Linux, macOS Keychain, or Windows Credential Manager) with filesystem mode 0600.',
-      'arch.c4Title': 'Account-Level Zero Data Retention',
-      'arch.c4Desc': 'Inference uses Groq Speech-to-Text endpoint under configured Zero Data Retention. Neither audio bytes nor textual output are stored on disk, logged in server output, or cached in cloud databases.',
+    try {
+      scene = new THREE.Scene();
 
-      'setup.title': 'Setup & Deployment',
-      'setup.subtitle': 'Three steps to run the helper daemon and install the unpacked extension in Brave or Chrome.',
-      'setup.step1Header': '1. Start Local Helper Daemon',
-      'setup.step1Text': 'Clone the open-source repository and start the local helper server. It binds strictly to 127.0.0.1:4318.',
-      'setup.step2Header': '2. Load Extension in Browser',
-      'setup.step2Text': 'Open your browser extension manager and enable Developer Mode:',
-      'setup.step3Header': '3. Authorize via Local Setup Page',
-      'setup.step3Text': 'Navigate to http://127.0.0.1:4318/setup in your browser. Enter your Groq API key once. The helper verifies authentication against Groq and stores the credential in your system vault.',
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 3000);
+      camera.position.set(0, 350, 750);
+      camera.lookAt(0, -50, 0);
 
-      'audit.title': 'Data Privacy Matrix',
-      'audit.subtitle': 'Comparing the architectural guarantees of Voice Note Transcriber against conventional transcription methods.',
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance'
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
 
-      'footer.legal': 'Independent open-source project. Not affiliated with, authorized, or endorsed by WhatsApp, Meta Platforms, Inc., Brave Software, or Groq, Inc.'
-    },
+      // Create Particle Grid Geometry
+      geometry = new THREE.BufferGeometry();
+      positions = new Float32Array(numParticles * 3);
+      colors = new Float32Array(numParticles * 3);
+      initialY = new Float32Array(numParticles);
 
-    az: {
-      'nav.overview': 'İcmal',
-      'nav.simulator': 'Canlı Simulyator',
-      'nav.architecture': 'Arxitektura',
-      'nav.installation': 'Quraşdırma',
-      'nav.audit': 'Təhlükəsizlik Auditi',
+      const separation = 38;
+      const offsetX = (countX * separation) / 2;
+      const offsetZ = (countZ * separation) / 2;
 
-      'hero.status': 'Brave və Chromium Əlavəsi • Sıfır Məlumat Saxlanması',
-      'hero.heading': 'WhatsApp Web səsli mesajları üçün səssiz transkripsiya',
-      'hero.description': 'Seçilmiş səsli mesajları otağa səs yaymadan, çatları qeydə almadan və API açarlarını brauzerə çıxarmadan mətnə çevirir. Groq Whisper Large v3 və əməliyyat sisteminin etibarlı şifrə anbarı ilə işləyir.',
-      'hero.ctaCode': 'Mənbə Kodu və Quraşdırma',
-      'hero.ctaSimulator': 'Simulyatoru Başlat',
+      let idx = 0;
+      for (let ix = 0; ix < countX; ix++) {
+        for (let iz = 0; iz < countZ; iz++) {
+          const x = ix * separation - offsetX;
+          const z = iz * separation - offsetZ;
+          const y = 0;
 
-      'specs.engine': 'Model',
-      'specs.latency': 'İnfrans',
-      'specs.capture': 'Audio Hook',
-      'specs.secrets': 'Açarlar',
+          positions[idx * 3] = x;
+          positions[idx * 3 + 1] = y;
+          positions[idx * 3 + 2] = z;
 
-      'sim.subtitle': 'WhatsApp Web sessiyası',
-      'sim.pill': 'Mesajlar uçdan-uca şifrələnir',
-      'sim.msg1': 'Audit təsdiq etdi ki, Groq Zero Data Retention aktivdir. Audio hook-un otağa heç vaxt səs buraxmadığını təsdiq edə bilərsiniz?',
-      'sim.btnLabel': 'Transkript',
-      'sim.engineTag': 'Whisper Large v3',
-      'sim.actionRefresh': 'Yenilə',
-      'sim.actionCopy': 'Kopyala',
-      'sim.transcribedText': '"Tam doğrudur. Detached Audio hook-u media mənbəyini oxumamışdan əvvəl audionu səssizləşdirir, native play() çağırılmır və mesaj dərhal sıfır saniyəyə qaytarılır. Heç bir səs baytı otağa yayılmır."',
-      'sim.msgOut': 'Mükəmməl. Transkript birbaşa mesaj bubble-ı daxilində oxundu, saat göstəricisi ilə də toqquşmur.',
-      'sim.caption': 'Simulyasiyanı işə salmaq üçün yuxarıdakı mesaj qutusundakı "Transkript" düyməsinə klikləyin.',
+          initialY[idx] = y;
 
-      'arch.title': 'Təhlükəsizlik və Texniki Arxitektura',
-      'arch.subtitle': 'WhatsApp Web çatlarının oxunmasının, audio sızmalarının və açıq mətnli açar təhlükələrinin qarşısını almaq üçün xüsusi olaraq layihələndirilib.',
-      'arch.c1Title': 'MAIN-World Detached Audio Hook',
-      'arch.c1Desc': 'WhatsApp Web səs axınlarını DOM teqlərində deyil, fonda Audio obyektlərində saxlayır. Extension document_start anında decrypted blob: URL-i tutur, səsi sıfırlayır və səs çıxmadan dərhal dayandırır.',
-      'arch.c2Title': 'Yalnız Loopback Node.js Köməkçisi',
-      'arch.c2Desc': 'Kənar API açarları brauzer yaddaşına və ya content script-ə düşmür. Audio baytları yalnız 127.0.0.1:4318 ünvanında işləyən yerli serverdən və Opus/OGG yoxlamasından keçir.',
-      'arch.c3Title': 'Əməliyyat Sisteminin Şifrə Anbarı',
-      'arch.c3Desc': 'Açar daimi saxlanıldıqda birbaşa əməliyyat sisteminin rəsmi anbarına (Linux GNOME Keyring, macOS Keychain, Windows Credential Vault) 0600 icazəsi ilə yazılır.',
-      'arch.c4Title': 'Hesab Səviyyəsində Sıfır Məlumat Saxlanması',
-      'arch.c4Desc': 'Transkripsiya Groq-un rəsmi Zero Data Retention siyasəti altında işləyir. Nə audio baytları, nə də çıxarılan mətn diskə, server loqlarına və ya kənar bazalara yazılmır.',
+          // Color gradient: Emerald Green (#00a884) to Soft Cyan (#7ed9e8)
+          const distFromCenter = Math.sqrt(x * x + z * z) / 1200;
+          colors[idx * 3] = 0.0 + distFromCenter * 0.15;     // R
+          colors[idx * 3 + 1] = 0.66 + distFromCenter * 0.2;  // G
+          colors[idx * 3 + 2] = 0.52 + distFromCenter * 0.35; // B
 
-      'setup.title': 'Quraşdırma və İşə Salma',
-      'setup.subtitle': 'Yerli serveri işə salmaq və unpacked extension-ı Brave və ya Chrome-a yükləmək üçün 3 addım.',
-      'setup.step1Header': '1. Yerli Serveri Başladın',
-      'setup.step1Text': 'Açıq qaynaqlı repozitoriyanı klonlayın və köməkçi serveri işə salın. Yalnız 127.0.0.1:4318 ünvanına bağlanır.',
-      'setup.step2Header': '2. Extension-ı Brauzerə Yükləyin',
-      'setup.step2Text': 'Brauzerin əlavələr menecerini açın və Developer rejimini aktivləşdirin:',
-      'setup.step3Header': '3. Yerli Setup Səhifəsindən Təsdiq Edin',
-      'setup.step3Text': 'Brauzerdə http://127.0.0.1:4318/setup ünvanına daxil olun. Groq API açarınızı daxil edin. Köməkçi açarı yoxlayaraq sisteminizin etibarlı anbarında saxlayır.',
+          idx++;
+        }
+      }
 
-      'audit.title': 'Məlumat Məxfiliyi Matrisi',
-      'audit.subtitle': 'Voice Note Transcriber arxitekturasının ənənəvi transkripsiya metodları ilə müqayisəsi.',
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-      'footer.legal': 'Müstəqil açıq qaynaqlı layihədir. WhatsApp, Meta Platforms, Inc., Brave Software və ya Groq, Inc. ilə heç bir rəsmi bağlılığı yoxdur.'
+      // Circular glowing particle texture
+      const particleTexture = createGlowTexture();
+
+      material = new THREE.PointsMaterial({
+        size: 7,
+        vertexColors: true,
+        map: particleTexture,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      particles = new THREE.Points(geometry, material);
+      scene.add(particles);
+
+      window.addEventListener('resize', onWindowResize, { passive: true });
+      document.addEventListener('mousemove', onMouseMove, { passive: true });
+
+      animate();
+    } catch (e) {
+      console.warn('WebGL initialization skipped:', e);
+      if (canvas) canvas.style.display = 'none';
     }
-  };
+  }
 
-  let activeLang = 'en';
+  function createGlowTexture() {
+    const c = document.createElement('canvas');
+    c.width = 64;
+    c.height = 64;
+    const ctx = c.getContext('2d');
 
-  function setLanguage(lang) {
-    activeLang = lang;
-    const dict = translations[lang] || translations.en;
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.3, 'rgba(0, 168, 132, 0.8)');
+    gradient.addColorStop(0.7, 'rgba(0, 168, 132, 0.2)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      if (dict[key]) {
-        el.textContent = dict[key];
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+
+    const texture = new THREE.CanvasTexture(c);
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  function onWindowResize() {
+    windowHalfX = window.innerWidth / 2;
+    windowHalfY = window.innerHeight / 2;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function onMouseMove(event) {
+    targetMouseX = (event.clientX - windowHalfX) * 0.4;
+    targetMouseY = (event.clientY - windowHalfY) * 0.3;
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const time = clock.getElapsedTime();
+
+    // Smooth mouse inertia
+    mouseX += (targetMouseX - mouseX) * 0.05;
+    mouseY += (targetMouseY - mouseY) * 0.05;
+
+    camera.position.x = mouseX * 0.7;
+    camera.position.y = 350 - mouseY * 0.5;
+    camera.lookAt(0, -30, 0);
+
+    // Audio-reactive intensity interpolation
+    audioIntensity += (targetIntensity - audioIntensity) * 0.08;
+
+    const pos = geometry.attributes.position.array;
+    const col = geometry.attributes.color.array;
+
+    let idx = 0;
+    for (let ix = 0; ix < countX; ix++) {
+      for (let iz = 0; iz < countZ; iz++) {
+        const x = pos[idx * 3];
+        const z = pos[idx * 3 + 2];
+
+        // Complex 3D audio-wave harmonics
+        const wave1 = Math.sin((ix * 0.2) + (time * 2.2)) * 35;
+        const wave2 = Math.cos((iz * 0.2) + (time * 1.8)) * 30;
+        const radialWave = Math.sin(Math.sqrt(ix * ix + iz * iz) * 0.25 - time * 3.0) * 22;
+
+        const dynamicHeight = (wave1 + wave2 + radialWave) * audioIntensity;
+
+        if (isConverged) {
+          // Crystallization convergence effect towards a calm plane
+          pos[idx * 3 + 1] += (0 - pos[idx * 3 + 1]) * 0.08;
+        } else {
+          pos[idx * 3 + 1] = dynamicHeight;
+        }
+
+        // Modulate color on audio spike
+        if (audioIntensity > 1.4) {
+          col[idx * 3] = Math.min(1.0, 0.2 + (audioIntensity - 1.0) * 0.5);
+          col[idx * 3 + 1] = 0.95;
+          col[idx * 3 + 2] = 0.85;
+        } else {
+          const dist = Math.sqrt(x * x + z * z) / 1200;
+          col[idx * 3] = 0.0 + dist * 0.15;
+          col[idx * 3 + 1] = 0.66 + dist * 0.2;
+          col[idx * 3 + 2] = 0.52 + dist * 0.35;
+        }
+
+        idx++;
+      }
+    }
+
+    geometry.attributes.position.needsUpdate = true;
+    geometry.attributes.color.needsUpdate = true;
+
+    renderer.render(scene, camera);
+  }
+
+  initThree();
+
+  // --- 2. Interactive 3D Audio Spike Triggers ---
+  function pulse3dWave(magnitude = 2.4, duration = 1200) {
+    targetIntensity = magnitude;
+    isConverged = false;
+    setTimeout(() => {
+      targetIntensity = 1.0;
+    }, duration);
+  }
+
+  const trigger3dBtn = document.getElementById('trigger3dBtn');
+  if (trigger3dBtn) {
+    trigger3dBtn.addEventListener('click', () => {
+      pulse3dWave(3.0, 1600);
+      const status = document.getElementById('stageStatus');
+      if (status) {
+        status.textContent = '3D WebGL audio wave harmonic spike active!';
+        setTimeout(() => {
+          status.textContent = 'Move mouse to rotate 3D soundfield';
+        }, 1800);
       }
     });
-
-    const langLabel = document.getElementById('lang-label');
-    if (langLabel) {
-      langLabel.textContent = lang === 'en' ? 'AZ' : 'EN';
-    }
-    document.documentElement.lang = lang;
   }
 
-  const langBtn = document.getElementById('lang-toggle');
-  if (langBtn) {
-    langBtn.addEventListener('click', () => {
-      setLanguage(activeLang === 'en' ? 'az' : 'en');
-    });
-  }
-
-  // --- 2. Theme Switching ---
-  const themeBtn = document.getElementById('theme-toggle');
-  const sunIcon = document.querySelector('.icon-theme-sun');
-  const moonIcon = document.querySelector('.icon-theme-moon');
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('vnt-theme', theme);
-    if (sunIcon && moonIcon) {
-      sunIcon.style.display = theme === 'dark' ? 'block' : 'none';
-      moonIcon.style.display = theme === 'dark' ? 'none' : 'block';
-    }
-  }
-
-  const savedTheme = localStorage.getItem('vnt-theme') || 'dark';
-  applyTheme(savedTheme);
-
-  if (themeBtn) {
-    themeBtn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      applyTheme(current === 'dark' ? 'light' : 'dark');
-    });
-  }
-
-  // --- 3. WhatsApp Audio Player & Extension Simulator ---
-  const simPlayBtn = document.getElementById('sim-play-btn');
-  const simIconPlay = document.getElementById('sim-icon-play');
-  const simIconPause = document.getElementById('sim-icon-pause');
-  const waveformBars = document.querySelectorAll('#sim-waveform .wf-bar');
-
-  let isPlaying = false;
-  let waveTimer = null;
+  // --- 3. WhatsApp Interactive Message Simulation ---
+  const stageAudioBtn = document.getElementById('stageAudioBtn');
+  const stagePlayIcon = document.getElementById('stagePlayIcon');
+  const stagePauseIcon = document.getElementById('stagePauseIcon');
+  const miniWaveformBars = document.querySelectorAll('#miniWaveform .m-bar');
+  let isPlayingAudio = false;
+  let audioTimer = null;
 
   function toggleAudioSimulation() {
-    isPlaying = !isPlaying;
-    if (isPlaying) {
-      if (simIconPlay) simIconPlay.style.display = 'none';
-      if (simIconPause) simIconPause.style.display = 'block';
+    isPlayingAudio = !isPlayingAudio;
+    if (isPlayingAudio) {
+      if (stagePlayIcon) stagePlayIcon.style.display = 'none';
+      if (stagePauseIcon) stagePauseIcon.style.display = 'block';
 
-      let currentBar = 0;
-      waveTimer = setInterval(() => {
-        waveformBars.forEach((bar, idx) => {
-          if (idx <= currentBar) {
-            bar.classList.add('past');
+      pulse3dWave(2.2, 3500);
+
+      let barIdx = 0;
+      audioTimer = setInterval(() => {
+        miniWaveformBars.forEach((bar, i) => {
+          if (i <= barIdx) {
+            bar.classList.add('active');
           } else {
-            bar.classList.remove('past');
+            bar.classList.remove('active');
           }
         });
-        currentBar = (currentBar + 1) % waveformBars.length;
+        barIdx = (barIdx + 1) % miniWaveformBars.length;
       }, 180);
     } else {
-      if (simIconPlay) simIconPlay.style.display = 'block';
-      if (simIconPause) simIconPause.style.display = 'none';
-      clearInterval(waveTimer);
+      if (stagePlayIcon) stagePlayIcon.style.display = 'block';
+      if (stagePauseIcon) stagePauseIcon.style.display = 'none';
+      targetIntensity = 1.0;
+      clearInterval(audioTimer);
     }
   }
 
-  if (simPlayBtn) {
-    simPlayBtn.addEventListener('click', toggleAudioSimulation);
+  if (stageAudioBtn) {
+    stageAudioBtn.addEventListener('click', toggleAudioSimulation);
   }
 
-  // --- 4. Transcription Hook Simulation ---
-  const simTriggerBtn = document.getElementById('sim-trigger-btn');
-  const simTriggerLabel = document.getElementById('sim-trigger-label');
-  const simTranscriptPanel = document.getElementById('sim-transcript-panel');
-  const simBtnRefresh = document.getElementById('sim-btn-refresh');
-  const simBtnCopy = document.getElementById('sim-btn-copy');
-  const simTranscriptText = document.getElementById('sim-transcript-text');
+  // --- 4. Transcribe Button & Convergence Simulation ---
+  const stageTranscribeBtn = document.getElementById('stageTranscribeBtn');
+  const transcribeLabel = document.getElementById('transcribeLabel');
+  const transcriptPanel = document.getElementById('transcriptPanel');
+  const btnRefresh = document.getElementById('btnRefresh');
+  const btnCopy = document.getElementById('btnCopy');
+  const panelOutput = document.getElementById('panelOutput');
 
-  function runTranscriptSimulation() {
-    if (!simTriggerBtn || !simTranscriptPanel) return;
+  function startTranscriptionSimulation() {
+    if (!stageTranscribeBtn || !transcriptPanel) return;
 
-    simTriggerBtn.classList.add('is-loading');
-    simTriggerLabel.textContent = activeLang === 'az' ? 'Audio tutulur...' : 'Extracting audio...';
+    stageTranscribeBtn.classList.add('loading');
+    transcribeLabel.textContent = 'Extracting audio...';
+
+    // Boost 3D wave during extraction
+    pulse3dWave(2.6, 900);
 
     setTimeout(() => {
-      simTriggerLabel.textContent = activeLang === 'az' ? 'Whisper çevirir...' : 'Whisper inferencing...';
+      transcribeLabel.textContent = 'Whisper v3 inferencing...';
     }, 450);
 
     setTimeout(() => {
-      simTriggerBtn.style.display = 'none';
-      simTranscriptPanel.style.display = 'block';
-      simTriggerBtn.classList.remove('is-loading');
+      stageTranscribeBtn.style.display = 'none';
+      transcriptPanel.style.display = 'block';
+      stageTranscribeBtn.classList.remove('loading');
+
+      // Converge 3D wave into crystalline plane to represent structured text
+      isConverged = true;
+      targetIntensity = 0.3;
+
+      setTimeout(() => {
+        isConverged = false;
+        targetIntensity = 1.0;
+      }, 2500);
     }, 1100);
   }
 
-  if (simTriggerBtn) {
-    simTriggerBtn.addEventListener('click', runTranscriptSimulation);
+  if (stageTranscribeBtn) {
+    stageTranscribeBtn.addEventListener('click', startTranscriptionSimulation);
   }
 
-  if (simBtnRefresh) {
-    simBtnRefresh.addEventListener('click', () => {
-      simTranscriptPanel.style.display = 'none';
-      simTriggerBtn.style.display = 'inline-flex';
-      simTriggerLabel.textContent = activeLang === 'az' ? 'Transkript' : 'Transcribe';
-      runTranscriptSimulation();
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      transcriptPanel.style.display = 'none';
+      stageTranscribeBtn.style.display = 'inline-flex';
+      transcribeLabel.textContent = 'Transcribe';
+      startTranscriptionSimulation();
     });
   }
 
-  if (simBtnCopy) {
-    simBtnCopy.addEventListener('click', () => {
-      const text = simTranscriptText ? simTranscriptText.innerText.replace(/"/g, '') : '';
+  if (btnCopy) {
+    btnCopy.addEventListener('click', () => {
+      const text = panelOutput ? panelOutput.innerText.replace(/"/g, '') : '';
       navigator.clipboard.writeText(text).then(() => {
-        const prev = simBtnCopy.textContent;
-        simBtnCopy.textContent = activeLang === 'az' ? 'Kopyalandı' : 'Copied';
-        simBtnCopy.style.borderColor = 'var(--brand-wa)';
-        simBtnCopy.style.color = 'var(--brand-wa)';
+        const orig = btnCopy.textContent;
+        btnCopy.textContent = 'Copied!';
+        btnCopy.style.borderColor = 'var(--wa-emerald)';
+        btnCopy.style.color = 'var(--wa-emerald)';
         setTimeout(() => {
-          simBtnCopy.textContent = prev;
-          simBtnCopy.style.borderColor = '';
-          simBtnCopy.style.color = '';
+          btnCopy.textContent = orig;
+          btnCopy.style.borderColor = '';
+          btnCopy.style.color = '';
         }, 1600);
       });
     });
   }
 
-  // --- 5. Terminal Code Copy Button ---
-  document.querySelectorAll('.terminal-copy-btn').forEach(btn => {
+  // --- 5. Terminal Code Copy Snippet ---
+  document.querySelectorAll('.copy-cmd-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const code = btn.getAttribute('data-copy');
-      if (code) {
-        navigator.clipboard.writeText(code).then(() => {
+      const cmd = btn.getAttribute('data-copy');
+      if (cmd) {
+        navigator.clipboard.writeText(cmd).then(() => {
           const original = btn.textContent;
-          btn.textContent = 'Copied';
-          btn.style.borderColor = 'var(--brand-wa)';
-          btn.style.color = 'var(--brand-wa)';
+          btn.textContent = 'Copied!';
+          btn.style.borderColor = 'var(--wa-emerald)';
+          btn.style.color = 'var(--wa-emerald)';
           setTimeout(() => {
             btn.textContent = original;
             btn.style.borderColor = '';
