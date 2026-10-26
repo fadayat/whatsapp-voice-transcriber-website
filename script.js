@@ -1,172 +1,128 @@
-// Voice Note Transcriber — Interactive Logic & Localization
+// Voice Note Transcriber — Client Interaction & Localization
 document.addEventListener('DOMContentLoaded', () => {
-  // --- 1. Localization Dictionary ---
-  const i18n = {
+  // --- 1. Localization Dictionary (Zero Emoji, Natural Professional Tone) ---
+  const translations = {
     en: {
-      'nav.features': 'Features',
-      'nav.demo': 'Interactive Demo',
-      'nav.howItWorks': 'How It Works',
-      'nav.setup': 'Quick Setup',
-      'nav.security': 'Privacy & Security',
+      'nav.overview': 'Overview',
+      'nav.simulator': 'Live Simulator',
+      'nav.architecture': 'Architecture',
+      'nav.installation': 'Installation',
+      'nav.audit': 'Security Audit',
 
-      'hero.badge': '100% Silent In-Memory Capture • Zero Data Retention',
-      'hero.title': 'Read WhatsApp Voice Notes <span class="highlight">Without Playing Them Aloud</span>',
-      'hero.lead': 'A privacy-conscious browser extension for Brave and Chrome. Converts voice messages into text on demand using Groq Whisper Large v3 — without unmuting audio, logging chats, or exposing your credentials.',
-      'hero.ctaPrimary': 'Get Extension on GitHub',
-      'hero.ctaSecondary': 'Try Interactive Demo',
+      'hero.status': 'Brave & Chromium Extension • Zero Data Retention',
+      'hero.heading': 'On-demand transcription for WhatsApp Web voice notes',
+      'hero.description': 'Converts selected incoming voice messages to text without audio playback leaks, background conversation scraping, or credential exposure. Powered by Groq Whisper Large v3 and native operating system keyrings.',
+      'hero.ctaCode': 'View Source & Setup',
+      'hero.ctaSimulator': 'Launch Simulator',
 
-      'trust.silentTitle': 'Silent Capture',
-      'trust.silentDesc': 'Audio is extracted in RAM without room playback',
-      'trust.retentionTitle': 'Zero Retention',
-      'trust.retentionDesc': 'Groq account-level Zero Data Retention supported',
-      'trust.speedTitle': '~1.2s Latency',
-      'trust.speedDesc': 'High-speed Whisper Large v3 inference',
-      'trust.vaultTitle': 'OS Credential Vault',
-      'trust.vaultDesc': 'API keys stay in GNOME Keyring / macOS Keychain',
+      'specs.engine': 'Engine',
+      'specs.latency': 'Inference',
+      'specs.capture': 'Audio Hook',
+      'specs.secrets': 'Secrets',
 
-      'demo.eyebrow': 'Simulated WhatsApp Web Experience',
-      'demo.title': 'See It in Action Right Here',
-      'demo.subtitle': 'Test the exact UI injection, silent capture, and instant transcription panel without needing WhatsApp open right now.',
-      'demo.chatOnline': 'online • encrypted chat',
-      'demo.today': 'TODAY',
-      'demo.msg1': 'Hey team! Quick update on the v0.2.0 release checklist. Can you check this voice note from our security review?',
-      'demo.btnTranscribe': 'Transcribe',
-      'demo.panelTitle': 'Transcript (Groq Whisper v3)',
-      'demo.btnRefresh': 'Refresh',
-      'demo.btnCopy': 'Copy',
-      'demo.transcriptContent': '"Hello everyone. Security audit and automated tests have all passed successfully. All API keys are protected and v0.2.0 is ready for public release."',
-      'demo.msgReply': 'Awesome! Read the transcript without having to listen. Ready to push to GitHub!',
-      'demo.footerNote': '💡 Try clicking the green <strong>"Transcribe"</strong> button above to test the simulation!',
+      'sim.subtitle': 'WhatsApp Web session',
+      'sim.pill': 'Messages are end-to-end encrypted',
+      'sim.msg1': 'The audit confirmed that Groq Zero Data Retention is active. Can you confirm the audio capture hook never plays out loud?',
+      'sim.btnLabel': 'Transcribe',
+      'sim.engineTag': 'Whisper Large v3',
+      'sim.actionRefresh': 'Refresh',
+      'sim.actionCopy': 'Copy',
+      'sim.transcribedText': '"Exactly right. The detached Audio hook mutes the media channel before source resolution, suppresses native play(), and leaves the message paused at time zero. Zero audio bytes leak into the room."',
+      'sim.msgOut': 'Excellent. The transcript renders directly inside the message bubble and avoids clock overlap.',
+      'sim.caption': 'Click the "Transcribe" button inside the message bubble above to trigger the simulated flow.',
 
-      'features.eyebrow': 'Privacy & Architecture',
-      'features.title': 'Engineered Specifically for Privacy',
-      'features.subtitle': 'Standard transcribers forward chats to third-party servers. Voice Note Transcriber keeps everything private, client-side, and on-demand.',
-      'features.card1Title': 'Silent DOM Hook',
-      'features.card1Desc': 'WhatsApp Web no longer exposes standard <audio> DOM tags. Our MAIN-world hook captures the decrypted in-memory Opus Blob URL, silences the playback channel, and resets media position instantly.',
-      'features.card2Title': 'Zero Data Retention',
-      'features.card2Desc': 'Audio stays in temporary memory and is sent directly to your Groq endpoint. No audio bytes or text transcripts are written to disk, server logs, or cloud databases.',
-      'features.card3Title': 'OS Credential Keyring',
-      'features.card3Desc': 'Your Groq API key is stored securely in your OS keychain (GNOME Keyring, macOS Keychain, or Windows Credential Manager). It never touches the browser extension storage or Git files.',
-      'features.card4Title': 'User-Triggered Privacy Model',
-      'features.card4Desc': 'The extension never runs in the background across your entire chat. It only wakes up and transcribes the single message where you explicitly clicked "Transcribe".',
-      'features.card5Title': 'Whisper Large v3 Accuracy',
-      'features.card5Desc': 'Leverages OpenAI benchmark Whisper Large v3 model running on Groq high-performance LPU inference engine, giving 90+ language support with native accents.',
-      'features.card6Title': 'Seamless Native Bubble Fit',
-      'features.card6Desc': 'Mounts directly inside WhatsApp real speech bubble with auto-adapting light/dark mode, scroll-recycle cleanup, and a dedicated 20px footer lane so timestamps never collide.',
+      'arch.title': 'Security & Technical Architecture',
+      'arch.subtitle': 'Designed specifically to prevent WhatsApp Web chat scraping, audio eavesdropping, and plain-text credential leaks.',
+      'arch.c1Title': 'MAIN-World Detached Audio Hook',
+      'arch.c1Desc': 'WhatsApp Web isolates decrypted voice streams in headless JavaScript Audio instances rather than DOM audio tags. The extension intercepts the in-memory blob: URL at document start, sets media volume to zero, and resets position before dispatch.',
+      'arch.c2Title': 'Loopback-Only Node.js Helper',
+      'arch.c2Desc': 'Third-party API credentials never touch browser storage or extension content scripts. Audio arrays pass through 127.0.0.1:4318 over a restricted loopback origin with strictly validated Opus/OGG headers.',
+      'arch.c3Title': 'Native OS Secret Storage',
+      'arch.c3Desc': 'When persistent authentication is enabled, the Groq API key is written directly to the operating system credential vault (GNOME Keyring on Linux, macOS Keychain, or Windows Credential Manager) with filesystem mode 0600.',
+      'arch.c4Title': 'Account-Level Zero Data Retention',
+      'arch.c4Desc': 'Inference uses Groq Speech-to-Text endpoint under configured Zero Data Retention. Neither audio bytes nor textual output are stored on disk, logged in server output, or cached in cloud databases.',
 
-      'how.eyebrow': 'Under The Hood',
-      'how.title': 'How It Works in 4 Steps',
-      'how.step1Title': 'User Clicks Transcribe',
-      'how.step1Desc': 'You click the discreet inline Transcribe button inside the voice message bubble.',
-      'how.step2Title': 'Silent Blob Extraction',
-      'how.step2Desc': 'The MAIN-world hook extracts the in-memory decrypted Opus audio blob silently with zero speaker leak.',
-      'how.step3Title': 'Local Helper Forwarding',
-      'how.step3Desc': 'Audio is forwarded to 127.0.0.1:4318, which attaches your OS-stored Groq key and queries Whisper.',
-      'how.step4Title': 'Instant Inline Render',
-      'how.step4Desc': 'The transcript arrives in ~1.2s and mounts cleanly below the waveform with 1-click Copy.',
+      'setup.title': 'Setup & Deployment',
+      'setup.subtitle': 'Three steps to run the helper daemon and install the unpacked extension in Brave or Chrome.',
+      'setup.step1Header': '1. Start Local Helper Daemon',
+      'setup.step1Text': 'Clone the open-source repository and start the local helper server. It binds strictly to 127.0.0.1:4318.',
+      'setup.step2Header': '2. Load Extension in Browser',
+      'setup.step2Text': 'Open your browser extension manager and enable Developer Mode:',
+      'setup.step3Header': '3. Authorize via Local Setup Page',
+      'setup.step3Text': 'Navigate to http://127.0.0.1:4318/setup in your browser. Enter your Groq API key once. The helper verifies authentication against Groq and stores the credential in your system vault.',
 
-      'setup.eyebrow': 'Get Started in 2 Minutes',
-      'setup.title': 'Quick Installation Guide',
-      'setup.subtitle': 'Works on Linux (Fedora/Ubuntu), macOS, and Windows with Brave, Chrome, or any Chromium-based browser.',
-      'setup.step1Label': 'Step 1 • Clone & Start Local Helper',
-      'setup.step2Label': 'Step 2 • Load Unpacked Extension in Brave / Chrome',
-      'setup.step3Label': 'Step 3 • Add Free Groq Key to Secure OS Keyring',
-      'setup.step3Desc': 'Open http://127.0.0.1:4318/setup in your browser. Paste your free Groq API key (starts with gsk_...). The helper verifies the key and securely saves it in your system credential vault.',
+      'audit.title': 'Data Privacy Matrix',
+      'audit.subtitle': 'Comparing the architectural guarantees of Voice Note Transcriber against conventional transcription methods.',
 
-      'security.eyebrow': 'Trust & Transparency',
-      'security.title': 'Privacy Comparison Matrix',
-
-      'footer.desc': 'An open-source, privacy-first solution for WhatsApp Web audio messages. Created by Fadayat Shamilov.'
+      'footer.legal': 'Independent open-source project. Not affiliated with, authorized, or endorsed by WhatsApp, Meta Platforms, Inc., Brave Software, or Groq, Inc.'
     },
 
     az: {
-      'nav.features': 'Özəlliklər',
-      'nav.demo': 'İnteraktiv Demo',
-      'nav.howItWorks': 'Necə İşləyir',
-      'nav.setup': 'Quraşdırma',
-      'nav.security': 'Məxfilik və Təhlükəsizlik',
+      'nav.overview': 'İcmal',
+      'nav.simulator': 'Canlı Simulyator',
+      'nav.architecture': 'Arxitektura',
+      'nav.installation': 'Quraşdırma',
+      'nav.audit': 'Təhlükəsizlik Auditi',
 
-      'hero.badge': '100% Səssiz RAM Capture • Sıfır Məlumat Saxlanması',
-      'hero.title': 'WhatsApp Səsli Mesajlarını <span class="highlight">Səsi Açmadan Oxuyun</span>',
-      'hero.lead': 'Brave və Chrome üçün tam məxfi brauzer extension-ı. Səsli mesajları Groq Whisper Large v3 ilə dərhal mətnə çevirir — otağa səs yayılmır, çatlar qeydə alınmır və açarlarınız qorunur.',
-      'hero.ctaPrimary': 'GitHub-da Əldə Edin',
-      'hero.ctaSecondary': 'İnteraktiv Demonu Yoxla',
+      'hero.status': 'Brave və Chromium Əlavəsi • Sıfır Məlumat Saxlanması',
+      'hero.heading': 'WhatsApp Web səsli mesajları üçün səssiz transkripsiya',
+      'hero.description': 'Seçilmiş səsli mesajları otağa səs yaymadan, çatları qeydə almadan və API açarlarını brauzerə çıxarmadan mətnə çevirir. Groq Whisper Large v3 və əməliyyat sisteminin etibarlı şifrə anbarı ilə işləyir.',
+      'hero.ctaCode': 'Mənbə Kodu və Quraşdırma',
+      'hero.ctaSimulator': 'Simulyatoru Başlat',
 
-      'trust.silentTitle': 'Səssiz Qəbul',
-      'trust.silentDesc': 'Audio birbaşa RAM-dan səssiz oxunur, otağa səs getmir',
-      'trust.retentionTitle': 'Zero Retention',
-      'trust.retentionDesc': 'Groq səviyyəsində Sıfır Məlumat Saxlanması dəstəklənir',
-      'trust.speedTitle': '~1.2s Sürət',
-      'trust.speedDesc': 'Whisper Large v3 ilə yüksək sürətli çevirmə',
-      'trust.vaultTitle': 'Sistem Keyring-i',
-      'trust.vaultDesc': 'API açarları birbaşa ƏS-in şifrə anbarında saxlanılır',
+      'specs.engine': 'Model',
+      'specs.latency': 'İnfrans',
+      'specs.capture': 'Audio Hook',
+      'specs.secrets': 'Açarlar',
 
-      'demo.eyebrow': 'Real WhatsApp Web Simulyasiyası',
-      'demo.title': 'Elə İndi Burada Sınayın',
-      'demo.subtitle': 'WhatsApp-ı açmadan real extension interfeysini, səssiz qəbulu və transkript panelini dərhal test edin.',
-      'demo.chatOnline': 'onlayn • şifrələnmiş çat',
-      'demo.today': 'BUGÜN',
-      'demo.msg1': 'Salam komanda! v0.2.0 reliz yoxlama siyahısı hazırdır. Təhlükəsizlik auditi barədə bu səsli mesaja baxa bilərsiniz?',
-      'demo.btnTranscribe': 'Transkript',
-      'demo.panelTitle': 'Transkript (Groq Whisper v3)',
-      'demo.btnRefresh': 'Yenilə',
-      'demo.btnCopy': 'Kopyala',
-      'demo.transcriptContent': '"Hamıya salam. Təhlükəsizlik auditi və avtomatlaşdırılmış testlər tam keçdi. Bütün açarlar qorunub, v0.2.0 versiyasını rahatlıqla yayımlaya bilərik."',
-      'demo.msgReply': 'Əla! Səsə qulaq asmadan oxudum. GitHub-a push edirik!',
-      'demo.footerNote': '💡 Simulyasiyanı yoxlamaq üçün yuxarıdakı yaşıl <strong>"Transkript"</strong> düyməsinə klikləyin!',
+      'sim.subtitle': 'WhatsApp Web sessiyası',
+      'sim.pill': 'Mesajlar uçdan-uca şifrələnir',
+      'sim.msg1': 'Audit təsdiq etdi ki, Groq Zero Data Retention aktivdir. Audio hook-un otağa heç vaxt səs buraxmadığını təsdiq edə bilərsiniz?',
+      'sim.btnLabel': 'Transkript',
+      'sim.engineTag': 'Whisper Large v3',
+      'sim.actionRefresh': 'Yenilə',
+      'sim.actionCopy': 'Kopyala',
+      'sim.transcribedText': '"Tam doğrudur. Detached Audio hook-u media mənbəyini oxumamışdan əvvəl audionu səssizləşdirir, native play() çağırılmır və mesaj dərhal sıfır saniyəyə qaytarılır. Heç bir səs baytı otağa yayılmır."',
+      'sim.msgOut': 'Mükəmməl. Transkript birbaşa mesaj bubble-ı daxilində oxundu, saat göstəricisi ilə də toqquşmur.',
+      'sim.caption': 'Simulyasiyanı işə salmaq üçün yuxarıdakı mesaj qutusundakı "Transkript" düyməsinə klikləyin.',
 
-      'features.eyebrow': 'Məxfilik və Arxitektura',
-      'features.title': 'Yalnız Məxfilik üçün Mühəndislik',
-      'features.subtitle': 'Adi transkript alətləri bütün çatı kənar serverlərə ötürür. Voice Note Transcriber hər şeyi lokal, yalnız tələb olunduqda və tam məxfi saxlayır.',
-      'features.card1Title': 'Səssiz DOM Hook',
-      'features.card1Desc': 'WhatsApp Web artıq audio teqlərini DOM-a çıxarmır. Bizim MAIN-world hook şifrəsi açılmış in-memory Opus Blob URL-i tutur, medianı dərhal səssizləşdirir və sıfırlayır.',
-      'features.card2Title': 'Sıfır Saxlanma (Zero Retention)',
-      'features.card2Desc': 'Audio yalnız müvəqqəti RAM-da qalır və birbaşa Groq API-ya göndərilir. Heç bir audio və ya mətn faylı diskə, loqlara və ya bulud bazalarına yazılmır.',
-      'features.card3Title': 'ƏS Keyring Mühafizəsi',
-      'features.card3Desc': 'Groq API açarınız ƏS-in rəsmi anbarında (GNOME Keyring, macOS Keychain, Windows Credential Manager) saxlanılır. Extension-a və Git-ə düşmür.',
-      'features.card4Title': 'İstifadəçi Tələbli Model',
-      'features.card4Desc': 'Extension bütün çatları arxa fonda dinləmir. Yalnız və yalnız sizin "Transkript" seçdiyiniz tək mesaj emal olunur.',
-      'features.card5Title': 'Whisper Large v3 Dəqiqliyi',
-      'features.card5Desc': 'Groq-un ultra sürətli LPU prosessorlarında işləyən rəsmi Whisper Large v3 modeli Azərbaycan və 90+ dil üçün yüksək dəqiqlik təmin edir.',
-      'features.card6Title': 'Mesaj Bubble-ına Dəqiq Yerləşmə',
-      'features.card6Desc': 'WhatsApp-ın real mesaj qutusu daxilinə inteqrasiya olunur, qaranlıq/işıqlı mövzuya uyğunlaşır və saat göstəricisi ilə toqquşmur.',
+      'arch.title': 'Təhlükəsizlik və Texniki Arxitektura',
+      'arch.subtitle': 'WhatsApp Web çatlarının oxunmasının, audio sızmalarının və açıq mətnli açar təhlükələrinin qarşısını almaq üçün xüsusi olaraq layihələndirilib.',
+      'arch.c1Title': 'MAIN-World Detached Audio Hook',
+      'arch.c1Desc': 'WhatsApp Web səs axınlarını DOM teqlərində deyil, fonda Audio obyektlərində saxlayır. Extension document_start anında decrypted blob: URL-i tutur, səsi sıfırlayır və səs çıxmadan dərhal dayandırır.',
+      'arch.c2Title': 'Yalnız Loopback Node.js Köməkçisi',
+      'arch.c2Desc': 'Kənar API açarları brauzer yaddaşına və ya content script-ə düşmür. Audio baytları yalnız 127.0.0.1:4318 ünvanında işləyən yerli serverdən və Opus/OGG yoxlamasından keçir.',
+      'arch.c3Title': 'Əməliyyat Sisteminin Şifrə Anbarı',
+      'arch.c3Desc': 'Açar daimi saxlanıldıqda birbaşa əməliyyat sisteminin rəsmi anbarına (Linux GNOME Keyring, macOS Keychain, Windows Credential Vault) 0600 icazəsi ilə yazılır.',
+      'arch.c4Title': 'Hesab Səviyyəsində Sıfır Məlumat Saxlanması',
+      'arch.c4Desc': 'Transkripsiya Groq-un rəsmi Zero Data Retention siyasəti altında işləyir. Nə audio baytları, nə də çıxarılan mətn diskə, server loqlarına və ya kənar bazalara yazılmır.',
 
-      'how.eyebrow': 'Daxili İş Mexanizmi',
-      'how.title': '4 Sadə Addımda Necə İşləyir',
-      'how.step1Title': 'İstifadəçi Klikləyir',
-      'how.step1Desc': 'Mesaj qutusunun daxilindəki "Transkript" düyməsinə klikləyirsiniz.',
-      'how.step2Title': 'Səssiz Blob Qəbulu',
-      'how.step2Desc': 'MAIN-world hook RAM-dakı şifrəsi açılmış Opus səs faylını otağa heç bir səs buraxmadan səssiz tutur.',
-      'how.step3Title': 'Lokal Serverə Ötürmə',
-      'how.step3Desc': 'Audio 127.0.0.1:4318 ünvanına ötürülür və ƏS anbarındakı Groq açarınızla Whisper-ə sorğu göndərilir.',
-      'how.step4Title': 'Dərhal Ekrana Çıxış',
-      'how.step4Desc': 'Transkript ~1.2 saniyəyə hazır olur və səs dalğasının altında tək toxunuşla Kopyalama düyməsi ilə açılır.',
+      'setup.title': 'Quraşdırma və İşə Salma',
+      'setup.subtitle': 'Yerli serveri işə salmaq və unpacked extension-ı Brave və ya Chrome-a yükləmək üçün 3 addım.',
+      'setup.step1Header': '1. Yerli Serveri Başladın',
+      'setup.step1Text': 'Açıq qaynaqlı repozitoriyanı klonlayın və köməkçi serveri işə salın. Yalnız 127.0.0.1:4318 ünvanına bağlanır.',
+      'setup.step2Header': '2. Extension-ı Brauzerə Yükləyin',
+      'setup.step2Text': 'Brauzerin əlavələr menecerini açın və Developer rejimini aktivləşdirin:',
+      'setup.step3Header': '3. Yerli Setup Səhifəsindən Təsdiq Edin',
+      'setup.step3Text': 'Brauzerdə http://127.0.0.1:4318/setup ünvanına daxil olun. Groq API açarınızı daxil edin. Köməkçi açarı yoxlayaraq sisteminizin etibarlı anbarında saxlayır.',
 
-      'setup.eyebrow': '2 Dəqiqəyə Başlayın',
-      'setup.title': 'Sürətli Quraşdırma Bələdçisi',
-      'setup.subtitle': 'Linux (Fedora/Ubuntu), macOS və Windows-da Brave, Chrome və Chromium əsaslı brauzerlərlə işləyir.',
-      'setup.step1Label': 'Addım 1 • Repozitoriyanı Klonlayın və Serveri Başladın',
-      'setup.step2Label': 'Addım 2 • Extension-ı Brave / Chrome-a Yükləyin',
-      'setup.step3Label': 'Addım 3 • Pulsuz Groq Açarını ƏS Anbarına Əlavə Edin',
-      'setup.step3Desc': 'Brauzerdə http://127.0.0.1:4318/setup səhifəsini açın. Pulsuz Groq API açarınızı yapışdırın. Sistem açarı yoxlayıb etibarlı sistem anbarınızda yadda saxlayacaq.',
+      'audit.title': 'Məlumat Məxfiliyi Matrisi',
+      'audit.subtitle': 'Voice Note Transcriber arxitekturasının ənənəvi transkripsiya metodları ilə müqayisəsi.',
 
-      'security.eyebrow': 'Şəffaflıq və Etimad',
-      'security.title': 'Məxfilik Müqayisə Cədvəli',
-
-      'footer.desc': 'WhatsApp Web səsli mesajları üçün açıq qaynaqlı və məxfilik yönümlü həll. Müəllif: Fədayət Şamilov.'
+      'footer.legal': 'Müstəqil açıq qaynaqlı layihədir. WhatsApp, Meta Platforms, Inc., Brave Software və ya Groq, Inc. ilə heç bir rəsmi bağlılığı yoxdur.'
     }
   };
 
-  let currentLang = 'en';
+  let activeLang = 'en';
 
-  function applyLanguage(lang) {
-    currentLang = lang;
-    const dict = i18n[lang] || i18n.en;
+  function setLanguage(lang) {
+    activeLang = lang;
+    const dict = translations[lang] || translations.en;
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       if (dict[key]) {
-        el.innerHTML = dict[key];
+        el.textContent = dict[key];
       }
     });
 
@@ -180,140 +136,141 @@ document.addEventListener('DOMContentLoaded', () => {
   const langBtn = document.getElementById('lang-toggle');
   if (langBtn) {
     langBtn.addEventListener('click', () => {
-      const nextLang = currentLang === 'en' ? 'az' : 'en';
-      applyLanguage(nextLang);
+      setLanguage(activeLang === 'en' ? 'az' : 'en');
     });
   }
 
-  // --- 2. Dark / Light Theme Toggle ---
+  // --- 2. Theme Switching ---
   const themeBtn = document.getElementById('theme-toggle');
-  const themeIcon = themeBtn ? themeBtn.querySelector('.theme-icon') : null;
+  const sunIcon = document.querySelector('.icon-theme-sun');
+  const moonIcon = document.querySelector('.icon-theme-moon');
 
-  function setTheme(theme) {
+  function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('vnt-theme', theme);
-    if (themeIcon) {
-      themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    if (sunIcon && moonIcon) {
+      sunIcon.style.display = theme === 'dark' ? 'block' : 'none';
+      moonIcon.style.display = theme === 'dark' ? 'none' : 'block';
     }
   }
 
   const savedTheme = localStorage.getItem('vnt-theme') || 'dark';
-  setTheme(savedTheme);
+  applyTheme(savedTheme);
 
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
       const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      setTheme(current === 'dark' ? 'light' : 'dark');
+      applyTheme(current === 'dark' ? 'light' : 'dark');
     });
   }
 
-  // --- 3. Interactive WhatsApp Simulator ---
-  const btnTranscribe = document.getElementById('btn-transcribe');
-  const transcribeBtnText = document.getElementById('transcribe-btn-text');
-  const transcriptPanel = document.getElementById('transcript-panel');
-  const btnDemoRefresh = document.getElementById('btn-demo-refresh');
-  const btnDemoCopy = document.getElementById('btn-demo-copy');
-  const transcriptText = document.getElementById('transcript-text');
-  const playBtn = document.getElementById('demo-play-btn');
-  const playIcon = playBtn ? playBtn.querySelector('.play-icon') : null;
-  const pauseIcon = playBtn ? playBtn.querySelector('.pause-icon') : null;
-  const waveformBars = document.querySelectorAll('#demo-waveform .bar');
+  // --- 3. WhatsApp Audio Player & Extension Simulator ---
+  const simPlayBtn = document.getElementById('sim-play-btn');
+  const simIconPlay = document.getElementById('sim-icon-play');
+  const simIconPause = document.getElementById('sim-icon-pause');
+  const waveformBars = document.querySelectorAll('#sim-waveform .wf-bar');
 
   let isPlaying = false;
-  let playInterval = null;
+  let waveTimer = null;
 
-  function togglePlay() {
+  function toggleAudioSimulation() {
     isPlaying = !isPlaying;
     if (isPlaying) {
-      if (playIcon) playIcon.style.display = 'none';
-      if (pauseIcon) pauseIcon.style.display = 'block';
-      let activeIndex = 0;
-      playInterval = setInterval(() => {
+      if (simIconPlay) simIconPlay.style.display = 'none';
+      if (simIconPause) simIconPause.style.display = 'block';
+
+      let currentBar = 0;
+      waveTimer = setInterval(() => {
         waveformBars.forEach((bar, idx) => {
-          if (idx <= activeIndex) {
-            bar.classList.add('active');
+          if (idx <= currentBar) {
+            bar.classList.add('past');
           } else {
-            bar.classList.remove('active');
+            bar.classList.remove('past');
           }
         });
-        activeIndex = (activeIndex + 1) % waveformBars.length;
-      }, 200);
+        currentBar = (currentBar + 1) % waveformBars.length;
+      }, 180);
     } else {
-      if (playIcon) playIcon.style.display = 'block';
-      if (pauseIcon) pauseIcon.style.display = 'none';
-      clearInterval(playInterval);
+      if (simIconPlay) simIconPlay.style.display = 'block';
+      if (simIconPause) simIconPause.style.display = 'none';
+      clearInterval(waveTimer);
     }
   }
 
-  if (playBtn) {
-    playBtn.addEventListener('click', togglePlay);
+  if (simPlayBtn) {
+    simPlayBtn.addEventListener('click', toggleAudioSimulation);
   }
 
-  function simulateTranscription() {
-    if (!btnTranscribe || !transcriptPanel) return;
+  // --- 4. Transcription Hook Simulation ---
+  const simTriggerBtn = document.getElementById('sim-trigger-btn');
+  const simTriggerLabel = document.getElementById('sim-trigger-label');
+  const simTranscriptPanel = document.getElementById('sim-transcript-panel');
+  const simBtnRefresh = document.getElementById('sim-btn-refresh');
+  const simBtnCopy = document.getElementById('sim-btn-copy');
+  const simTranscriptText = document.getElementById('sim-transcript-text');
 
-    btnTranscribe.classList.add('loading');
-    const loadingText = currentLang === 'az' ? 'Səs oxunur...' : 'Extracting audio...';
-    transcribeBtnText.textContent = loadingText;
+  function runTranscriptSimulation() {
+    if (!simTriggerBtn || !simTranscriptPanel) return;
 
-    // Simulate silent audio capture & Groq inference latency (~1.1s)
+    simTriggerBtn.classList.add('is-loading');
+    simTriggerLabel.textContent = activeLang === 'az' ? 'Audio tutulur...' : 'Extracting audio...';
+
     setTimeout(() => {
-      const inferenceText = currentLang === 'az' ? 'Groq Whisper v3 çevirir...' : 'Whisper v3 transcribing...';
-      transcribeBtnText.textContent = inferenceText;
+      simTriggerLabel.textContent = activeLang === 'az' ? 'Whisper çevirir...' : 'Whisper inferencing...';
     }, 450);
 
     setTimeout(() => {
-      btnTranscribe.style.display = 'none';
-      transcriptPanel.style.display = 'block';
-      btnTranscribe.classList.remove('loading');
+      simTriggerBtn.style.display = 'none';
+      simTranscriptPanel.style.display = 'block';
+      simTriggerBtn.classList.remove('is-loading');
     }, 1100);
   }
 
-  if (btnTranscribe) {
-    btnTranscribe.addEventListener('click', simulateTranscription);
+  if (simTriggerBtn) {
+    simTriggerBtn.addEventListener('click', runTranscriptSimulation);
   }
 
-  if (btnDemoRefresh) {
-    btnDemoRefresh.addEventListener('click', () => {
-      transcriptPanel.style.display = 'none';
-      btnTranscribe.style.display = 'inline-flex';
-      transcribeBtnText.textContent = currentLang === 'az' ? 'Transkript' : 'Transcribe';
-      simulateTranscription();
+  if (simBtnRefresh) {
+    simBtnRefresh.addEventListener('click', () => {
+      simTranscriptPanel.style.display = 'none';
+      simTriggerBtn.style.display = 'inline-flex';
+      simTriggerLabel.textContent = activeLang === 'az' ? 'Transkript' : 'Transcribe';
+      runTranscriptSimulation();
     });
   }
 
-  if (btnDemoCopy) {
-    btnDemoCopy.addEventListener('click', () => {
-      const textToCopy = transcriptText ? transcriptText.innerText.replace(/"/g, '') : '';
-      navigator.clipboard.writeText(textToCopy).then(() => {
-        const origText = btnDemoCopy.textContent;
-        btnDemoCopy.textContent = currentLang === 'az' ? 'Kopyalandı!' : 'Copied!';
-        btnDemoCopy.style.borderColor = '#00a884';
-        btnDemoCopy.style.color = '#00a884';
+  if (simBtnCopy) {
+    simBtnCopy.addEventListener('click', () => {
+      const text = simTranscriptText ? simTranscriptText.innerText.replace(/"/g, '') : '';
+      navigator.clipboard.writeText(text).then(() => {
+        const prev = simBtnCopy.textContent;
+        simBtnCopy.textContent = activeLang === 'az' ? 'Kopyalandı' : 'Copied';
+        simBtnCopy.style.borderColor = 'var(--brand-wa)';
+        simBtnCopy.style.color = 'var(--brand-wa)';
         setTimeout(() => {
-          btnDemoCopy.textContent = origText;
-          btnDemoCopy.style.borderColor = '';
-          btnDemoCopy.style.color = '';
-        }, 1800);
+          simBtnCopy.textContent = prev;
+          simBtnCopy.style.borderColor = '';
+          simBtnCopy.style.color = '';
+        }, 1600);
       });
     });
   }
 
-  // --- 4. Copy Code Snippet Buttons ---
-  document.querySelectorAll('.copy-code-btn').forEach(btn => {
+  // --- 5. Terminal Code Copy Button ---
+  document.querySelectorAll('.terminal-copy-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const code = btn.getAttribute('data-clipboard');
+      const code = btn.getAttribute('data-copy');
       if (code) {
         navigator.clipboard.writeText(code).then(() => {
           const original = btn.textContent;
-          btn.textContent = 'Copied!';
-          btn.style.backgroundColor = '#00a884';
-          btn.style.borderColor = '#00a884';
+          btn.textContent = 'Copied';
+          btn.style.borderColor = 'var(--brand-wa)';
+          btn.style.color = 'var(--brand-wa)';
           setTimeout(() => {
             btn.textContent = original;
-            btn.style.backgroundColor = '';
             btn.style.borderColor = '';
-          }, 2000);
+            btn.style.color = '';
+          }, 1800);
         });
       }
     });
